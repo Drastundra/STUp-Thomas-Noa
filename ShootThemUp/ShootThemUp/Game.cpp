@@ -10,6 +10,8 @@ Game::Game()
     mIsGameOver(false),
     mIsEnteringName(false) {
     mRNG.seed(std::chrono::steady_clock::now().time_since_epoch().count());
+    if (!mFont.loadFromFile("C:/Users/thoma/Downloads/ShootThemUp2/assets/Venus Rising Rg.otf")) {
+    }
 }
 
 void Game::run() {
@@ -37,7 +39,20 @@ void Game::processEvents() {
             mWindow.close();
         }
 
-        if (!mIsPlaying && !mIsEnteringName) {
+        if (mIsGameOver) {
+            if (event.type == sf::Event::KeyPressed &&
+                event.key.code == sf::Keyboard::Enter) {
+                mIsGameOver = false;
+                mIsPlaying = false;
+                mScore = 0;
+                mProjectiles.clear();
+                mAsteroids.clear();
+                mEnemyShips.clear();
+                mEnemyProjectiles.clear();
+                mPlayer = Player();
+            }
+        }
+        else if (!mIsPlaying && !mIsEnteringName) {
             processMenuEvents(event);
         }
         else if (mIsEnteringName) {
@@ -48,6 +63,15 @@ void Game::processEvents() {
         }
     }
 
+        if (!mIsPlaying && !mIsEnteringName) {
+            processMenuEvents(event);
+        }
+        else if (mIsEnteringName) {
+            processNameEntryEvents(event);
+        }
+        else {
+            processGameplayEvents(event);
+        }
     if (mIsPlaying && sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && mPlayer.canShoot()) {
         sf::Vector2f playerPos = mPlayer.getPosition();
         float playerRotation = mPlayer.getRotation();
@@ -65,7 +89,7 @@ void Game::processGameplayEvents(const sf::Event& event) {
     if (event.type == sf::Event::KeyPressed &&
         event.key.code == sf::Keyboard::Space &&
         mPlayer.canShoot()) {
-        // Création d'un nouveau projectile
+        
         sf::Vector2f playerPos = mPlayer.getPosition();
         float playerRotation = mPlayer.getRotation();
         mProjectiles.emplace_back(playerPos, playerRotation);
@@ -74,25 +98,25 @@ void Game::processGameplayEvents(const sf::Event& event) {
 }
 
 void Game::spawnAsteroid() {
-    // Choisir un côté aléatoire (0: haut, 1: droite, 2: bas, 3: gauche)
+    
     int side = randomInt(0, 3);
     sf::Vector2f position;
     sf::Vector2f velocity;
 
     switch (side) {
-    case 0: // Haut
+    case 0: 
         position = sf::Vector2f(randomFloat(0.f, 1500.f), -50.f);
         velocity = sf::Vector2f(randomFloat(-200.f, 200.f), randomFloat(100.f, 300.f));
         break;
-    case 1: // Droite
+    case 1: 
         position = sf::Vector2f(1550.f, randomFloat(0.f, 1000.f));
         velocity = sf::Vector2f(randomFloat(-300.f, -100.f), randomFloat(-200.f, 200.f));
         break;
-    case 2: // Bas
+    case 2: 
         position = sf::Vector2f(randomFloat(0.f, 1500.f), 1050.f);
         velocity = sf::Vector2f(randomFloat(-200.f, 200.f), randomFloat(-300.f, -100.f));
         break;
-    case 3: // Gauche
+    case 3: 
         position = sf::Vector2f(-50.f, randomFloat(0.f, 1000.f));
         velocity = sf::Vector2f(randomFloat(100.f, 300.f), randomFloat(-200.f, 200.f));
         break;
@@ -102,17 +126,15 @@ void Game::spawnAsteroid() {
 }
 
 void Game::spawnEnemyShip() {
-    // Logique similaire au spawn d'astéroïde
     int side = randomInt(0, 3);
     sf::Vector2f position;
     sf::Vector2f velocity;
 
     switch (side) {
-    case 0: // Haut
+    case 0: 
         position = sf::Vector2f(randomFloat(0.f, 1500.f), -50.f);
         velocity = sf::Vector2f(randomFloat(-100.f, 100.f), randomFloat(50.f, 150.f));
         break;
-        // ... autres cas similaires à spawnAsteroid
     }
 
     mEnemyShips.emplace_back(position, velocity);
@@ -120,16 +142,19 @@ void Game::spawnEnemyShip() {
 
 
 void Game::checkCollisions() {
-    // Vérification des collisions projectiles-astéroïdes
     for (auto projectileIt = mProjectiles.begin(); projectileIt != mProjectiles.end();) {
         bool projectileHit = false;
+
 
         for (auto asteroidIt = mAsteroids.begin(); asteroidIt != mAsteroids.end();) {
             if (projectileIt->getBounds().intersects(asteroidIt->getBounds())) {
                 asteroidIt = mAsteroids.erase(asteroidIt);
                 projectileHit = true;
+                mScore += 100;
                 break;
             }
+
+
             else {
                 ++asteroidIt;
             }
@@ -141,9 +166,9 @@ void Game::checkCollisions() {
         else {
             ++projectileIt;
         }
+
     }
 
-    // Vérification des collisions joueur-astéroïdes
     for (const auto& asteroid : mAsteroids) {
         if (mPlayer.getBounds().intersects(asteroid.getBounds())) {
             mIsPlaying = false;
@@ -159,6 +184,7 @@ void Game::checkCollisions() {
                 enemyIt = mEnemyShips.erase(enemyIt);
                 projectileIt = mProjectiles.erase(projectileIt);
                 enemyHit = true;
+                mScore += 200;
                 break;
             }
             else {
@@ -239,14 +265,11 @@ void Game::update(sf::Time deltaTime) {
         std::remove_if(mEnemyShips.begin(), mEnemyShips.end(),
             [](const EnemyShip& e) { return e.isOffscreen(); }),
         mEnemyShips.end());
-
-    // Nettoyage des projectiles ennemis hors écran
     mEnemyProjectiles.erase(
         std::remove_if(mEnemyProjectiles.begin(), mEnemyProjectiles.end(),
             [](const Projectile& p) { return p.isOffscreen(); }),
         mEnemyProjectiles.end());
 
-    // Vérification des collisions
     checkCollisions();
 
 }
@@ -256,7 +279,35 @@ void Game::render() {
 
     if (!mIsPlaying) {
         if (mIsGameOver) {
-            // Code de Game Over
+            mGameOverText.setFont(mFont);
+            mGameOverText.setString("GAME OVER");
+            mGameOverText.setCharacterSize(60);
+            mGameOverText.setFillColor(sf::Color::Red);
+            mGameOverText.setPosition(
+                (mWindow.getSize().x - mGameOverText.getGlobalBounds().width) / 2,
+                mWindow.getSize().y / 2 - 100
+            );
+
+            mScoreText.setFont(mFont);
+            mScoreText.setString("Score: " + std::to_string(mScore));
+            mScoreText.setCharacterSize(30);
+            mScoreText.setFillColor(sf::Color::White);
+            mScoreText.setPosition(
+                (mWindow.getSize().x - mScoreText.getGlobalBounds().width) / 2,
+                mWindow.getSize().y / 2
+            );
+
+            mRestartText.setFont(mFont);
+            mRestartText.setString("Press ENTER to return to menu");
+            mRestartText.setCharacterSize(20);
+            mRestartText.setFillColor(sf::Color::Yellow);
+            mRestartText.setPosition(
+                (mWindow.getSize().x - mRestartText.getGlobalBounds().width) / 2,
+                mWindow.getSize().y / 2 + 100
+            );
+            mWindow.draw(mGameOverText);
+            mWindow.draw(mScoreText);
+            mWindow.draw(mRestartText);
         }
         else {
             mMenu.draw(mWindow);
@@ -265,12 +316,10 @@ void Game::render() {
     else {
         mPlayer.draw(mWindow);
 
-        // Dessin des projectiles
         for (const auto& projectile : mProjectiles) {
             projectile.draw(mWindow);
         }
 
-        // Dessin des astéroïdes
         for (const auto& asteroid : mAsteroids) {
             asteroid.draw(mWindow);
 

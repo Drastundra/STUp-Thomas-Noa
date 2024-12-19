@@ -52,4 +52,9 @@ private:
     std::vector<Projectile> mEnemyProjectiles;
     sf::Clock mEnemySpawnClock;
     void spawnEnemyShip();
+    sf::Text mGameOverText;
+    sf::Text mScoreText;
+    sf::Text mRestartText;
+    sf::Font mFont;
+    int mScore;
 };
