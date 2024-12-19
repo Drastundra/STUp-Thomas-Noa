@@ -10,7 +10,7 @@ Game::Game()
     mIsGameOver(false),
     mIsEnteringName(false) {
     mRNG.seed(std::chrono::steady_clock::now().time_since_epoch().count());
-    if (!mFont.loadFromFile("C:/Users/thoma/Downloads/ShootThemUp2/assets/Venus Rising Rg.otf")) {
+    if (!mFont.loadFromFile("C:/Users/assets/Venus Rising Rg.otf")) {
     }
 }
 
@@ -18,7 +18,7 @@ void Game::run() {
     sf::Clock clock;
 
     sf::Music music;
-    if (!music.openFromFile("C:/Users/thoma/OneDrive/Documents/GitHub/projet_shoot_em_up/cours3decembre2/pvzgw2 ops special wave (version b).mp3"))
+    if (!music.openFromFile("C:/Users/assets/pvzgw2 ops special wave (version b).mp3"))
     { }
     music.play();
     while (mWindow.isOpen()) {
